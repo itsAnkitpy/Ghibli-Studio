@@ -7,9 +7,9 @@ import ImageGenerator from './image_generator';
 import { useImageStore } from '../store/imageStore';
 
 export default function ImageGrid() {
-  const { images, addImage } = useImageStore();
+  const { images, addImage, likeImage } = useImageStore();
 
-  const handleImageGenerated = (newImage) => {
+  const handleImageGenerated = (newImage: any) => {
     console.log('Handling new image:', newImage);
     addImage(newImage);
   };
@@ -17,6 +17,24 @@ export default function ImageGrid() {
   useEffect(() => {
     useImageStore.persist.rehydrate();
   }, []);
+
+  const handleLike = (id: string) => {
+    likeImage(id);
+  };
+
+  const handleDownload = (url: string, prompt: string) => {
+    fetch(url)
+      .then(response => response.blob())
+      .then(blob => {
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `${prompt.slice(0, 20)}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      })
+      .catch(error => console.error('Error downloading image:', error));
+  };
 
   console.log('Current images in store:', images);
 
@@ -44,10 +62,17 @@ export default function ImageGrid() {
                 }}
               />
               <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg flex items-center justify-center">
-                <button className="text-white p-2 hover:text-blue-400 transition-colors">
-                  <Heart size={24} />
+                <button 
+                  className="text-white p-2 hover:text-blue-400 transition-colors"
+                  onClick={() => handleLike(image.id)}
+                >
+                  <Heart size={24} fill={image.liked ? "currentColor" : "none"} />
+                  {image.likes > 0 && <span className="ml-1">{image.likes}</span>}
                 </button>
-                <button className="text-white p-2 hover:text-blue-400 transition-colors">
+                <button 
+                  className="text-white p-2 hover:text-blue-400 transition-colors"
+                  onClick={() => handleDownload(image.url, image.prompt)}
+                >
                   <Download size={24} />
                 </button>
               </div>
